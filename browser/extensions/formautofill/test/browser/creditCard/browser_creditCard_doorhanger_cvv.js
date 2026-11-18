@@ -323,6 +323,40 @@ add_task(async function test_save_doorhanger_without_security_code() {
   await SpecialPowers.popPrefEnv();
 });
 
+add_task(async function test_save_doorhanger_long_cardholder_name() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      [SUPPORTED_PREF, "on"],
+      [ENABLED_PREF, true],
+    ],
+  });
+
+  const values = { ...CC_VALUES, "#cc-name": "Cardholder".repeat(20) };
+  await withDoorhanger(values, async content => {
+    const box = content.querySelector(".desc-message-box");
+    const button = content.querySelector(".payments-doorhanger-options-button");
+    const boxRect = box.getBoundingClientRect();
+    const buttonRect = button.getBoundingClientRect();
+    const nameRect = content
+      .querySelector(".line-two")
+      .getBoundingClientRect();
+    Assert.greater(buttonRect.width, 0, "The edit button has a width");
+    Assert.lessOrEqual(
+      Math.round(buttonRect.right),
+      Math.round(boxRect.right),
+      "The edit button stays inside the card preview"
+    );
+    Assert.lessOrEqual(
+      Math.round(nameRect.right),
+      Math.round(buttonRect.left),
+      "The cardholder name does not overlap the edit button"
+    );
+    await clickDoorhangerButton(SECONDARY_BUTTON);
+  });
+
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function test_save_with_toggle_on_stores_security_code() {
   await SpecialPowers.pushPrefEnv({
     set: [
