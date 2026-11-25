@@ -14,6 +14,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
 export class FormStateManager {
   #formHandlerByElement = new WeakMap();
   #formHandlerByRootElement = new WeakMap();
+  // Values are WeakRefs; #formHandlerByRootElement keeps each handler alive
+  // for as long as its root element lives.
   #formHandlerByRootId = new Map();
 
   constructor(onFilledModifiedCallback) {
@@ -61,7 +63,11 @@ export class FormStateManager {
    *        The form handler associated with the specified input element.
    */
   getFormHandlerByRootElementId(rootElementId) {
-    return this.#formHandlerByRootId.get(rootElementId);
+    const handler = this.#formHandlerByRootId.get(rootElementId)?.deref();
+    if (!handler) {
+      this.#formHandlerByRootId.delete(rootElementId);
+    }
+    return handler;
   }
 
   /**
@@ -83,10 +89,19 @@ export class FormStateManager {
 
       const root = handler.form.rootElement;
       const rootElementId = lazy.FormAutofillUtils.getElementIdentifier(root);
-      this.#formHandlerByRootId.set(rootElementId, handler);
+      this.#pruneFormHandlerByRootId();
+      this.#formHandlerByRootId.set(rootElementId, new WeakRef(handler));
       this.#formHandlerByRootElement.set(root, handler);
     }
     return handler;
+  }
+
+  #pruneFormHandlerByRootId() {
+    for (const [id, ref] of this.#formHandlerByRootId) {
+      if (!ref.deref()) {
+        this.#formHandlerByRootId.delete(id);
+      }
+    }
   }
 
   removeFormHandlerByElementEntries(handler) {
