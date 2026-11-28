@@ -154,7 +154,7 @@ LoginManagerCrypto_SDR.prototype = {
       plainText = this._utfConverter.ConvertToUnicode(plainOctet);
     } catch (e) {
       this.log(
-        `Failed to decrypt cipher text of length ${cipherText.length} with error ${e.name}.`
+        `Failed to decrypt cipher text of length ${cipherText?.length} with error ${e.name}.`
       );
 
       // In the unlikely event the converter threw, reset it.

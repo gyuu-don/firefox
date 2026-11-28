@@ -229,3 +229,14 @@ add_task(
     await Services.logins.removeAllUserFacingLoginsAsync();
   }
 );
+
+add_task(function test_decrypt_null_ciphertext() {
+  let crypto = Cc["@mozilla.org/login-manager/crypto/SDR;1"].getService(
+    Ci.nsILoginManagerCrypto
+  );
+  Assert.throws(
+    () => crypto.decrypt(null),
+    /NS_ERROR_FAILURE/,
+    "A null ciphertext fails like any undecryptable value"
+  );
+});
